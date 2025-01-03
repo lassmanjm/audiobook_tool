@@ -125,12 +125,23 @@ def AddMetadataToFile(input, metadata_filepath, get_chapters, output_dir):
 
 
 def main(argv):
-    input = argv[1]
+    input_file = argv[1]
     output_path = argv[2]
     logging.set_verbosity(FLAGS.logging)
     get_chapters = FLAGS.get_chapters
     asin = FLAGS.asin
     metadata = GetMetadata(asin, get_chapters)
+
+    print(f"\nFound metadata for '{metadata["title"]}' by '{metadata["author"]}'.")
+    selection = ""
+    while selection not in {"y", "n"}:
+        selection = input("Continue? [y|n]: ").lower()
+        if selection == "n":
+            print("Exiting...")
+            return
+        elif selection != "y":
+            print("Please enter 'y' or 'n'.")
+
     path = os.path.join(output_path, metadata["author"], f"{metadata["title"]} {asin}")
     os.makedirs(path, exist_ok=True)
 
@@ -140,15 +151,15 @@ def main(argv):
 
         if FLAGS.merge:
             merge_out = os.path.join(temp_dir, "merged.m4b")
-            MergeFiles(input, merge_out)
-            input = merge_out
+            MergeFiles(input_file, merge_out)
+            input_file = merge_out
         else:
-            if os.path.isdir(input):
+            if os.path.isdir(input_file):
                 raise IsADirectoryError(
                     "The given input is a directory, not a file. If the contents of the directory should be merged, inlcude the --merge flag."
                 )
         file_with_metadata = AddMetadataToFile(
-            input, metadata_filepath, get_chapters, temp_dir
+            input_file, metadata_filepath, get_chapters, temp_dir
         )
         extension = os.path.splitext(file_with_metadata)[1]
         shutil.move(
