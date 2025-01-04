@@ -173,7 +173,6 @@ def main(argv):
     path = os.path.join(output_path, metadata["author"], f"{metadata["title"]} {asin}")
     os.makedirs(path, exist_ok=True)
 
-    # with TempDir(os.path.join(path, temp_files)) as temp_dir:
     with tempfile.TemporaryDirectory(dir=path) as temp_dir:
         metadata_filepath = WriteMetadataFile(metadata, temp_dir, get_chapters)
 
