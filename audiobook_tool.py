@@ -27,6 +27,10 @@ flags.DEFINE_bool(
 flags.DEFINE_enum(
     "logging", "error", ["debug", "info", "warning", "error", "fatal"], "Log level."
 )
+flags.DEFINE_bool(
+    "debug", False, "If true, print out all metadata information, and do nothing else."
+)
+flags.DEFINE_alias("d", "debug")
 
 temp_files = "temp_files"
 
@@ -69,11 +73,16 @@ def Get(url):
 def ProcessChapters(chapters: dict):
     out = []
     for chapter in chapters["chapters"]:
+        start_offset_ms = chapter["startOffsetMs"]
+        seconds, milliseconds = divmod(start_offset_ms, 1000)
+        minutes, seconds = divmod(seconds, 60)
+        hours, minutes = divmod(minutes, 60)
         out.append(
             {
-                "start": chapter["startOffsetMs"],
-                "end": chapter["startOffsetMs"] + chapter["lengthMs"] - 1,
+                "start": start_offset_ms,
+                "end": start_offset_ms + chapter["lengthMs"] - 1,
                 "title": chapter["title"],
+                "hms": f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}",
             }
         )
     return out
@@ -87,6 +96,10 @@ def GetMetadata(asin: str, get_chapters: bool = True) -> dict:
     metadata["author"] = book_data["authors"][0]["name"]
     metadata["title"] = book_data["title"]
     metadata["year"] = book_data["releaseDate"].split("-")[0]
+    hours, minutes = divmod(book_data["runtimeLengthMin"], 60)
+    metadata["length"] = f"{hours:02d}:{minutes:02d}"
+    metadata["narrators"] = ", ".join([narrator["name"] for narrator in book_data["narrators"]][0:5]) + (", ..." if len(book_data["narrators"]) > 5 else "")
+    metadata["publisher"] = book_data["publisherName"]
     logging.info(f"Metadata retrieved: {metadata["title"]}")
 
     if get_chapters:
@@ -94,6 +107,16 @@ def GetMetadata(asin: str, get_chapters: bool = True) -> dict:
         metadata["chapters"] = ProcessChapters(chapters)
     logging.info("Chapters retrieved.")
     return metadata
+
+
+def PrintDebug(metadata: dict, get_chapters: bool):
+    print(
+        f"\nTitle: {metadata["title"]}\nAuthor: {metadata["author"]}\nYear: {metadata["year"]}\nLength: {metadata["length"]}\nNarrators: {metadata["narrators"]}\nPublisher: {metadata["publisher"]}\n"
+    )
+    if not get_chapters:
+        return
+    for chapter in metadata["chapters"]:
+        print(f"{chapter["hms"]} {chapter["title"]}")
 
 
 def WriteMetadataFile(metadata: dict, path: str, get_chapters: bool):
@@ -125,14 +148,19 @@ def AddMetadataToFile(input, metadata_filepath, get_chapters, output_dir):
 
 
 def main(argv):
-    input_file = argv[1]
-    output_path = argv[2]
     logging.set_verbosity(FLAGS.logging)
     get_chapters = FLAGS.get_chapters
     asin = FLAGS.asin
     metadata = GetMetadata(asin, get_chapters)
+    if FLAGS.debug:
+        PrintDebug(metadata, get_chapters)
+        return
 
-    print(f"\nFound metadata for '{metadata["title"]}' by '{metadata["author"]}'.")
+    input_file = argv[1]
+    output_path = argv[2]
+
+    print("\nFound metadata for:")
+    PrintDebug(metadata, get_chapters=False)
     selection = ""
     while selection not in {"y", "n"}:
         selection = input("Continue? [y|n]: ").lower()
