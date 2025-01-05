@@ -159,8 +159,12 @@ def main(argv):
     input_file = argv[1]
     output_path = argv[2]
 
+    path = os.path.join(output_path, metadata["author"], f"{metadata["title"]} {asin}")
+    
+
     print("\nFound metadata for:")
     PrintDebug(metadata, get_chapters=False)
+    print(f"\nWriting to '{path}'")
     selection = ""
     while selection not in {"y", "n"}:
         selection = input("Continue? [y|n]: ").lower()
@@ -170,7 +174,6 @@ def main(argv):
         elif selection != "y":
             print("Please enter 'y' or 'n'.")
 
-    path = os.path.join(output_path, metadata["author"], f"{metadata["title"]} {asin}")
     os.makedirs(path, exist_ok=True)
 
     with tempfile.TemporaryDirectory(dir=path) as temp_dir:
