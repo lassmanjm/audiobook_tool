@@ -160,14 +160,16 @@ def main(argv):
     output_path = argv[2]
 
     path = os.path.join(output_path, metadata["author"], f"{metadata["title"]} {asin}")
-    
 
     print("\nFound metadata for:")
     PrintDebug(metadata, get_chapters=False)
-    print(f"\nWriting to '{path}'")
+    if (FLAGS.merge):
+        print("Merging files")
+    print(f"Importing {len(metadata["chapters"])} chapters" if get_chapters else "Not importing chapters.")
+    print(f"Writing to '{path}'")
     selection = ""
     while selection not in {"y", "n"}:
-        selection = input("Continue? [y|n]: ").lower()
+        selection = input("\nContinue? [y|n]: ").lower()
         if selection == "n":
             print("Exiting...")
             return
