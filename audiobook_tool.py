@@ -14,6 +14,18 @@ flags.DEFINE_string(
     "Amazon Standard Identification Number. Used to look up metadata from Audible",
     required=True,
 )
+# flags.DEFINE_string(
+#     "input",
+#     None,
+#     "The path to the input file or directory containing files",
+#     required=True,
+# )
+# flags.DEFINE_string(
+#     "output",
+#     None,
+#     "Amazon Standard Identification Number. Used to look up metadata from Audible",
+#     required=True,
+# )
 flags.DEFINE_bool(
     "merge",
     False,
