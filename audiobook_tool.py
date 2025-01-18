@@ -31,6 +31,7 @@ flags.DEFINE_bool(
     False,
     "Whether to merge the files found in the input directory into a single m4b file. Can also be used to convert the input file to an m4b file.",
 )
+flags.DEFINE_alias("m", "merge")
 flags.DEFINE_bool(
     "get_chapters",
     True,
@@ -43,6 +44,10 @@ flags.DEFINE_bool(
     "debug", False, "If true, print out all metadata information, and do nothing else."
 )
 flags.DEFINE_alias("d", "debug")
+flags.DEFINE_bool(
+    "force", False, "If true, skip confirmation."
+)
+flags.DEFINE_alias("f", "force")
 
 temp_files = "temp_files"
 
@@ -98,6 +103,18 @@ def ProcessChapters(chapters: dict):
             }
         )
     return out
+
+def CheckContinue():
+    while True:
+        selection = input("\nContinue? [y|n]: ").lower()
+        if selection == "n":
+            print("Exiting...")
+            return False
+        if selection == "y":
+            return True
+        elif selection != "y":
+            print("Please enter 'y' or 'n'.")
+
 
 
 def GetMetadata(asin: str, get_chapters: bool = True) -> dict:
@@ -179,14 +196,9 @@ def main(argv):
         print("Merging files")
     print(f"Importing {len(metadata["chapters"])} chapters" if get_chapters else "Not importing chapters.")
     print(f"Writing to '{path}'")
-    selection = ""
-    while selection not in {"y", "n"}:
-        selection = input("\nContinue? [y|n]: ").lower()
-        if selection == "n":
-            print("Exiting...")
-            return
-        elif selection != "y":
-            print("Please enter 'y' or 'n'.")
+
+    if not FLAGS.force and not CheckContinue():
+        return
 
     os.makedirs(path, exist_ok=True)
 
