@@ -168,7 +168,7 @@ def MergeFiles(input: str, temp_dir: str) -> str:
         files.append(os.path.abspath(input))
     for file in sorted(os.listdir(input), key=str.lower):
         if os.path.splitext(file)[1] in  {".m4a", ".m4b", ".mp3", ".flac"}:
-            files.append(os.path.abspath(file))
+            files.append(os.path.abspath(os.path.join(input,file)))
     input_list = ""
     for file in files:
         input_list += f"file '{file}'\n"
