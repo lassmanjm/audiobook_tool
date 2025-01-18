@@ -161,9 +161,25 @@ def WriteMetadataFile(metadata: dict, path: str, get_chapters: bool):
     return metadata_filepath
 
 
-def MergeFiles(input: str, output: str):
+def MergeFiles(input: str, temp_dir: str) -> str:
+    # Get list of input files and save to temp file
+    files=[]
+    if os.path.isfile(input):
+        files.append(os.path.abspath(input))
+    for file in sorted(os.listdir("."), key=str.lower):
+        if os.path.splitext(file)[1] in  {".m4a", ".m4b", ".mp3", ".flac"}:
+            files.append(os.path.abspath(file))
+    input_list = ""
+    for file in files:
+        input_list += f"file '{file}'\n"
+    merged_input_list=os.path.join(temp_dir, "merge_input_list.txt")
+    with open(merged_input_list, "w") as f:
+        f.write(input_list)
+    # Merge using ffmpeg
+    output = os.path.join(temp_dir, "merged.m4b")
     logging.info(f"Merging files to '{output}'")
-    TryCommand(f'm4b-tool merge "{input}" --output-file="{output}"')
+    TryCommand(f'ffmpeg -f concat -safe 0 -i "{merged_input_list}"  -c:a libfdk_aac -vbr 4 -vn  -y "{output}"')
+    return output
 
 
 def AddMetadataToFile(input, metadata_filepath, get_chapters, output_dir):
@@ -206,9 +222,7 @@ def main(argv):
         metadata_filepath = WriteMetadataFile(metadata, temp_dir, get_chapters)
 
         if FLAGS.merge:
-            merge_out = os.path.join(temp_dir, "merged.m4b")
-            MergeFiles(input_file, merge_out)
-            input_file = merge_out
+            input_file=MergeFiles(input_file, temp_dir)
         else:
             if os.path.isdir(input_file):
                 raise IsADirectoryError(
