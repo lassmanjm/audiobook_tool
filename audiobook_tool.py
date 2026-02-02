@@ -44,9 +44,7 @@ flags.DEFINE_bool(
     "debug", False, "If true, print out all metadata information, and do nothing else."
 )
 flags.DEFINE_alias("d", "debug")
-flags.DEFINE_bool(
-    "force", False, "If true, skip confirmation."
-)
+flags.DEFINE_bool("force", False, "If true, skip confirmation.")
 flags.DEFINE_alias("f", "force")
 
 temp_files = "temp_files"
@@ -74,6 +72,7 @@ def TryCommand(command: str):
             logging.debug(e.stdout)
         if e.stderr:
             logging.error(e.stderr)
+        print(result.stderr)
         raise
 
 
@@ -104,6 +103,7 @@ def ProcessChapters(chapters: dict):
         )
     return out
 
+
 def CheckContinue():
     while True:
         selection = input("\nContinue? [y|n]: ").lower()
@@ -116,7 +116,6 @@ def CheckContinue():
             print("Please enter 'y' or 'n'.")
 
 
-
 def GetMetadata(asin: str, get_chapters: bool = True) -> dict:
     logging.info("Retrieving metadata...")
     api_url = "https://api.audnex.us"
@@ -127,7 +126,9 @@ def GetMetadata(asin: str, get_chapters: bool = True) -> dict:
     metadata["year"] = book_data["releaseDate"].split("-")[0]
     hours, minutes = divmod(book_data["runtimeLengthMin"], 60)
     metadata["length"] = f"{hours:02d}:{minutes:02d}"
-    metadata["narrators"] = ", ".join([narrator["name"] for narrator in book_data["narrators"]][0:5]) + (", ..." if len(book_data["narrators"]) > 5 else "")
+    metadata["narrators"] = ", ".join(
+        [narrator["name"] for narrator in book_data["narrators"]][0:5]
+    ) + (", ..." if len(book_data["narrators"]) > 5 else "")
     metadata["publisher"] = book_data["publisherName"]
     logging.info(f"Metadata retrieved: {metadata["title"]}")
 
@@ -163,22 +164,24 @@ def WriteMetadataFile(metadata: dict, path: str, get_chapters: bool):
 
 def MergeFiles(input: str, temp_dir: str) -> str:
     # Get list of input files and save to temp file
-    files=[]
+    files = []
     if os.path.isfile(input):
         files.append(os.path.abspath(input))
     for file in sorted(os.listdir(input), key=str.lower):
-        if os.path.splitext(file)[1] in  {".m4a", ".m4b", ".mp3", ".flac"}:
-            files.append(os.path.abspath(os.path.join(input,file)))
+        if os.path.splitext(file)[1] in {".m4a", ".m4b", ".mp3", ".flac"}:
+            files.append(os.path.abspath(os.path.join(input, file)))
     input_list = ""
     for file in files:
         input_list += f"file '{file}'\n"
-    merged_input_list=os.path.join(temp_dir, "merge_input_list.txt")
+    merged_input_list = os.path.join(temp_dir, "merge_input_list.txt")
     with open(merged_input_list, "w") as f:
         f.write(input_list)
     # Merge using ffmpeg
     output = os.path.join(temp_dir, "merged.m4b")
     logging.info(f"Merging files to '{output}'")
-    TryCommand(f'ffmpeg -f concat -safe 0 -i "{merged_input_list}"  -c:a libfdk_aac -vbr 4 -vn  -y "{output}"')
+    TryCommand(
+        f'ffmpeg -f concat -safe 0 -i "{merged_input_list}"  -c:a libfdk_aac -vbr 4 -vn  -y "{output}"'
+    )
     return output
 
 
@@ -187,7 +190,7 @@ def AddMetadataToFile(input, metadata_filepath, get_chapters, output_dir):
     output_filepath = os.path.join(output_dir, f"with_metadata{extension}")
     logging.info(f"Adding metadata to file '{output_filepath}'")
     TryCommand(
-        f"ffmpeg -y -i \"{input}\" -i \"{metadata_filepath}\" -map 0:a -map_metadata 1 {"-map_chapters 1 " if get_chapters else ""}-c copy \"{output_filepath}\""
+        f'ffmpeg -y -i "{input}" -i "{metadata_filepath}" -map 0:a -map_metadata 1 {"-map_chapters 1 " if get_chapters else ""}-c copy "{output_filepath}"'
     )
     return output_filepath
 
@@ -208,9 +211,13 @@ def main(argv):
 
     print("\nFound metadata for:")
     PrintDebug(metadata, get_chapters=False)
-    if (FLAGS.merge):
+    if FLAGS.merge:
         print("Merging files")
-    print(f"Importing {len(metadata["chapters"])} chapters" if get_chapters else "Not importing chapters.")
+    print(
+        f"Importing {len(metadata["chapters"])} chapters"
+        if get_chapters
+        else "Not importing chapters."
+    )
     print(f"Writing to '{path}'")
 
     if not FLAGS.force and not CheckContinue():
@@ -222,7 +229,7 @@ def main(argv):
         metadata_filepath = WriteMetadataFile(metadata, temp_dir, get_chapters)
 
         if FLAGS.merge:
-            input_file=MergeFiles(input_file, temp_dir)
+            input_file = MergeFiles(input_file, temp_dir)
         else:
             if os.path.isdir(input_file):
                 raise IsADirectoryError(
