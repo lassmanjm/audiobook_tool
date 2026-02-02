@@ -55,25 +55,21 @@ class GetRequestError(Exception):
 
 
 def TryCommand(command: str):
-    try:
-        result = subprocess.run(
-            command,
-            shell=True,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        if result.stdout:
-            logging.debug(result.stdout)
-        if result.stderr:
-            logging.info(result.stderr)
-    except Exception as e:
-        if e.stdout:
-            logging.debug(e.stdout)
-        if e.stderr:
-            logging.error(e.stderr)
+    result = subprocess.run(
+        command,
+        shell=True,
+        capture_output=True,
+        text=True,
+    )
+    if result.stdout:
+        logging.debug(result.stdout)
+    if result.stderr:
+        logging.info(result.stderr)
+    if result.returncode != 0:
         print(result.stderr)
-        raise
+        raise RuntimeError(
+            f"Command '{command}' failed with exit code {result.returncode}"
+        )
 
 
 def Get(url):
