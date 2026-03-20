@@ -97,7 +97,7 @@ def GetMetadata(asin: str, get_chapters: bool = True) -> dict:
 
 def debug_string(metadata: dict, get_chapters: bool):
     out = (
-        f"\nTitle: {metadata["title"]}\nAuthor: "
+        f"Title: {metadata["title"]}\nAuthor: "
         f"{metadata["author"]}\nYear: {metadata["year"]}\n"
         f"Length: {metadata["length"]}\nNarrators: "
         f"{metadata["narrators"]}\nPublisher: {metadata["publisher"]}\n"
@@ -112,9 +112,9 @@ def debug_string(metadata: dict, get_chapters: bool):
 def print_debug(metadata: dict, get_chapters: bool, log: bool):
     debug_str = debug_string(metadata, get_chapters)
     if log:
-        logging.info(debug_str)
+        logging.debug(debug_str)
     else:        
-        print(debug_str)
+        print(f"\n{debug_str}")
 
 
 def write_metadata_file(metadata: dict, path: str, get_chapters: bool):
@@ -179,7 +179,7 @@ def process_audiobook(
         return
     path = os.path.join(output_path, metadata["author"], f"{metadata["title"]} {asin}")
 
-    logging.info("Found metadata for:")
+    logging.info(f"Found metadata for: {metadata["title"]} by {metadata["author"]}")
     print_debug(metadata, get_chapters=False, log=True)
     if merge:
         logging.info("Merging files")
