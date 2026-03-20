@@ -175,7 +175,7 @@ def process_audiobook(
     metadata = GetMetadata(asin, get_chapters)
     # return metadata
     if debug:
-        print_debug(metadata, get_chapters)
+        print_debug(metadata, get_chapters, log=False)
         return
     path = os.path.join(output_path, metadata["author"], f"{metadata["title"]} {asin}")
 
