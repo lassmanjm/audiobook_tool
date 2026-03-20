@@ -167,7 +167,7 @@ def process_audiobook(
     input_path: str,
     output_path: str,
     asin: str,
-    get_chapters: bool = True,
+    get_chapters: bool = False,
     debug: bool = False,
     merge: bool = False,
     force: bool = False,
